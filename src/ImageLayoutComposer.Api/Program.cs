@@ -1,6 +1,7 @@
 using ImageLayoutComposer.Api.Services;
 using ImageLayoutComposer.Api.Middleware;
 using Serilog;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,22 @@ builder.Host.UseSerilog();
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+// Swagger Configuration
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new() 
+    { 
+        Title = "Image Layout Composer API", 
+        Version = "v1",
+        Description = "An ASP.NET Core Web API for composing images into grid layouts."
+    });
+
+    // Use XML documentation
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+});
 
 // CORS for Blazor Client
 builder.Services.AddCors(options =>
@@ -41,6 +58,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = "swagger"; // Swagger UI at /swagger
+    });
 }
 
 app.UseHttpsRedirection();

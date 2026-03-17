@@ -17,6 +17,7 @@
 
 # Image Layout Composer specific
 src/ImageLayoutComposer.Api/uploads/
+src/ImageLayoutComposer.Api/logs/
 
 # User-specific
 .gemini/
@@ -26,3 +27,4 @@ out.log
 err.log
 design.md
 instructions.txt
+[Ll]ogs/

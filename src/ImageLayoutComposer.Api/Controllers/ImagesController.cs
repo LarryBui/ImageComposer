@@ -81,6 +81,16 @@ public class ImagesController : ControllerBase
     }
 
     /// <summary>
+    /// Temporary endpoint to test the global exception handler.
+    /// </summary>
+    [HttpGet("test-error")]
+    public IActionResult TestError()
+    {
+        _logger.LogInformation("TestError endpoint called - about to throw a simulated exception.");
+        throw new Exception("This is a simulated enterprise-level crash for testing purposes!");
+    }
+
+    /// <summary>
     /// Downloads the original uploaded image by its unique ID.
     /// </summary>
     /// <param name="id">The unique identifier of the image.</param>

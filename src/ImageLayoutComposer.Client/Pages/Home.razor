@@ -13,7 +13,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <h5 class="card-title">Upload New Images</h5>
-            
+
             <div class="row g-3 align-items-center mb-3">
                 <div class="col-auto">
                     <label for="patientName" class="col-form-label">Patient Name:</label>
@@ -90,209 +90,65 @@
 </div>
 
 @code {
-
     private List<ImageMetadata> images = new();
-
     private bool isUploading = false;
+    private string patientName = string.Empty;
+    private List<IBrowserFile> selectedFiles = new();
+    private string? uploadResultMessage;
+    private string uploadResultClass = "alert-info";
 
-        private string patientName = string.Empty;
-
-        private List<IBrowserFile> selectedFiles = new();
-
-        private string? uploadResultMessage;
-
-        private string uploadResultClass = "alert-info";
-
-    
-
-        private bool CanUpload => !string.IsNullOrWhiteSpace(patientName) && selectedFiles.Any();
-
-    
-
-
+    private bool CanUpload => !string.IsNullOrWhiteSpace(patientName) && selectedFiles.Any();
 
     protected override async Task OnInitializedAsync()
-
     {
-
         await LoadImages();
-
     }
-
-
 
     private async Task LoadImages()
-
     {
-
         images = await ApiService.GetImagesAsync();
-
     }
-
-
 
     private void OnInputFileChange(InputFileChangeEventArgs e)
-
     {
-
         selectedFiles = e.GetMultipleFiles().ToList();
-
     }
 
+    private async Task UploadImages()
+    {
+        if (!CanUpload) return;
 
-
-        private async Task UploadImages()
-
-
-
+        isUploading = true;
+        uploadResultMessage = null;
+        try
         {
-
-
-
-            if (!CanUpload) return;
-
-
-
-    
-
-
-
-            isUploading = true;
-
-
-
-            uploadResultMessage = null;
-
-
-
-            try
-
-
-
+            var content = new MultipartFormDataContent();
+            foreach (var file in selectedFiles)
             {
-
-
-
-                var content = new MultipartFormDataContent();
-
-
-
-                            foreach (var file in selectedFiles)
-
-
-
-                            {
-
-
-
-                                var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: AppConstants.MaxFileSizeInBytes));
-
-
-
-                                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-
-
-                                content.Add(fileContent, "files", file.Name);
-
-
-
-                            }
-
-
-
-                
-
-
-
-    
-
-
-
-                var result = await ApiService.UploadImagesAsync(content, patientName);
-
-
-
-                
-
-
-
-                uploadResultMessage = $"Successfully uploaded {result.Count} images for {patientName}.";
-
-
-
-                uploadResultClass = "alert-success";
-
-
-
-    
-
-
-
-                // Reset after successful upload
-
-
-
-                selectedFiles.Clear();
-
-
-
-                patientName = string.Empty;
-
-
-
-                await LoadImages();
-
-
-
+                var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: AppConstants.MaxFileSizeInBytes));
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                content.Add(fileContent, "files", file.Name);
             }
 
+            var result = await ApiService.UploadImagesAsync(content, patientName);
+            
+            uploadResultMessage = $"Successfully uploaded {result.Count} images for {patientName}.";
+            uploadResultClass = "alert-success";
 
-
-            catch (Exception ex)
-
-
-
-            {
-
-
-
-                Console.WriteLine($"Error uploading files: {ex.Message}");
-
-
-
-                uploadResultMessage = $"Upload failed: {ex.Message}";
-
-
-
-                uploadResultClass = "alert-danger";
-
-
-
-            }
-
-
-
-            finally
-
-
-
-            {
-
-
-
-                isUploading = false;
-
-
-
-            }
-
-
-
+            // Reset after successful upload
+            selectedFiles.Clear();
+            patientName = string.Empty;
+            await LoadImages();
         }
-
-
-
-    
-
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error uploading files: {ex.Message}");
+            uploadResultMessage = $"Upload failed: {ex.Message}";
+            uploadResultClass = "alert-danger";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
 }
