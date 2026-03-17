@@ -46,6 +46,15 @@ public class ImagesController : ControllerBase
         foreach (var file in files)
         {
             _logger.LogDebug("Processing file {FileName}, size {Size}", file.FileName, file.Length);
+
+            // Validate file extension
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (!AppConstants.AllowedExtensions.Contains(extension))
+            {
+                _logger.LogWarning("File {FileName} has an invalid extension: {Extension}", file.FileName, extension);
+                continue;
+            }
+
             // Simple validation for file size from constants
             // more advanced image validation can be added here
             if (file.Length > AppConstants.MaxFileSizeInBytes)

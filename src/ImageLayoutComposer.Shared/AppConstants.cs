@@ -12,5 +12,7 @@ public static class AppConstants
     
     // Network & API
     public const string CorrelationIdHeader = "X-Correlation-ID";
-    public const string DefaultApiAddress = "https://localhost:7120/";
+
+    // File Validation
+    public static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png" };
 }

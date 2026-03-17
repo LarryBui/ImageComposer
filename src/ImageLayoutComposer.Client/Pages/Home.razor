@@ -24,8 +24,8 @@
             </div>
 
             <div class="mb-3">
-                <label for="fileInput" class="form-label">Select Images:</label>
-                <InputFile id="fileInput" OnChange="@OnInputFileChange" multiple class="form-control" />
+                <label for="fileInput" class="form-label">Select Images (@string.Join(", ", AppConstants.AllowedExtensions)):</label>
+                <InputFile id="fileInput" OnChange="@OnInputFileChange" multiple class="form-control" accept=".jpg,.jpeg,.png" />
             </div>
 
             @if (selectedFiles.Any())
@@ -111,7 +111,31 @@
 
     private void OnInputFileChange(InputFileChangeEventArgs e)
     {
-        selectedFiles = e.GetMultipleFiles().ToList();
+        uploadResultMessage = null;
+        var files = e.GetMultipleFiles();
+        var validFiles = new List<IBrowserFile>();
+        var rejectedCount = 0;
+
+        foreach (var file in files)
+        {
+            var extension = Path.GetExtension(file.Name).ToLower();
+            if (AppConstants.AllowedExtensions.Contains(extension))
+            {
+                validFiles.Add(file);
+            }
+            else
+            {
+                rejectedCount++;
+            }
+        }
+
+        selectedFiles = validFiles;
+
+        if (rejectedCount > 0)
+        {
+            uploadResultMessage = $"Ignored {rejectedCount} file(s) with invalid extensions. Only {string.Join(", ", AppConstants.AllowedExtensions)} are allowed.";
+            uploadResultClass = "alert-warning";
+        }
     }
 
     private async Task UploadImages()
