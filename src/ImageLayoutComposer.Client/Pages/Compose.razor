@@ -1,0 +1,227 @@
+@page "/compose"
+@using ImageLayoutComposer.Shared.Models
+@using ImageLayoutComposer.Client.Services
+@inject ApiService ApiService
+
+<PageTitle>Compose Grid</PageTitle>
+
+<div class="container mt-4">
+    <h1>Compose Image Layout</h1>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="patientName" class="form-label">Patient Name</label>
+                        <div class="input-group mb-2">
+                            <input type="text" id="patientName" class="form-control" 
+                                   @bind="patientName" @bind:event="oninput"
+                                   @onkeyup="HandleKeyUp"
+                                   placeholder="Enter patient name">
+                            <button class="btn btn-outline-primary" type="button" @onclick="LoadPatientImages" disabled="@isSearching">
+                                @if (isSearching)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                }
+                                else
+                                {
+                                    <span>Search</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="gridType" class="form-label">Layout</label>
+                        <select id="gridType" class="form-select" @bind="selectedGrid">
+                            <option value="@GridType.TwoByTwo">2x2 Grid</option>
+                            <option value="@GridType.ThreeByThree">3x3 Grid</option>
+                            <option value="@GridType.FourByFour">4x4 Grid</option>
+                        </select>
+                    </div>
+
+                    <p class="small text-muted">Select up to @MaxImages images for this layout.</p>
+                    
+                    <button class="btn btn-success w-100" @onclick="HandleCompose" disabled="@(!selectedImageIds.Any() || isComposing)">
+                        @if (isComposing)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span> Composing...</span>
+                        }
+                        else
+                        {
+                            <span>Generate Grid</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(resultImageUrl))
+            {
+                <div class="card mb-4 shadow-sm border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Result</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <a href="@resultImageUrl" download="composed-grid.jpg" class="btn btn-outline-success">Download Final Image</a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-8">
+            <h3>Select Images</h3>
+            @if (string.IsNullOrWhiteSpace(patientName))
+            {
+                <div class="alert alert-info shadow-sm">
+                    <i class="bi bi-person-fill"></i> Please enter a <strong>Patient Name</strong> in the settings and click <strong>Search</strong> to load images.
+                </div>
+            }
+            else if (isSearching)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading images...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Searching for images...</p>
+                </div>
+            }
+            else if (images != null && images.Any())
+            {
+                <div class="row row-cols-2 row-cols-md-4 g-3">
+                    @foreach (var img in images)
+                    {
+                        var isSelected = selectedImageIds.Contains(img.Id);
+                        <div class="col">
+                            <div class="card h-100 image-card @(isSelected ? "border-primary border-3" : "")" 
+                                 @onclick="() => ToggleSelection(img.Id)" style="cursor: pointer;">
+                                <img src="@(ApiService.BaseUrl + img.DownloadUrl?.TrimStart('/'))" class="card-img-top" 
+                                     alt="@img.OriginalFileName" style="height: 120px; object-fit: cover;">
+                                @if (isSelected)
+                                {
+                                    <div class="position-absolute top-0 end-0 p-1">
+                                        <span class="badge bg-primary">Selected</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(patientName))
+            {
+                <div class="alert alert-warning shadow-sm">
+                    <i class="bi bi-exclamation-triangle-fill"></i> No images found for patient <strong>@patientName</strong>. Please <a href="/">upload some images</a> first.
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(resultImageUrl))
+            {
+                <div class="mt-4">
+                    <h3>Preview</h3>
+                    <img src="@resultImageUrl" class="img-fluid border rounded" alt="Generated composition" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .image-card:hover { transform: scale(1.02); transition: all 0.2s ease; }
+    .image-card.border-primary { background-color: rgba(13, 110, 253, 0.05); }
+</style>
+
+@code {
+    private List<ImageMetadata> images = new();
+    private List<Guid> selectedImageIds = new();
+    private GridType selectedGrid = GridType.TwoByTwo;
+    private bool isComposing = false;
+    private bool isSearching = false;
+    private string patientName = string.Empty;
+    private string? resultImageUrl;
+
+    private int MaxImages => selectedGrid switch
+    {
+        GridType.TwoByTwo => 4,
+        GridType.ThreeByThree => 9,
+        GridType.FourByFour => 16,
+        _ => 4
+    };
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadPatientImages();
+        }
+    }
+
+    private async Task LoadPatientImages()
+    {
+        if (string.IsNullOrWhiteSpace(patientName)) 
+        {
+            images = new();
+            return;
+        }
+
+        isSearching = true;
+        resultImageUrl = null;
+        selectedImageIds.Clear();
+        try
+        {
+            images = await ApiService.GetImagesAsync(patientName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading images: {ex.Message}");
+            images = new();
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private void ToggleSelection(Guid id)
+    {
+        if (selectedImageIds.Contains(id))
+        {
+            selectedImageIds.Remove(id);
+        }
+        else if (selectedImageIds.Count < MaxImages)
+        {
+            selectedImageIds.Add(id);
+        }
+        resultImageUrl = null;
+    }
+
+    private async Task HandleCompose()
+    {
+        isComposing = true;
+        resultImageUrl = null;
+        try
+        {
+            var request = new CompositionRequest
+            {
+                Layout = selectedGrid,
+                ImageIds = selectedImageIds
+            };
+
+            var imageData = await ApiService.ComposeAsync(request);
+            var base64 = Convert.ToBase64String(imageData);
+            resultImageUrl = $"data:image/jpeg;base64,{base64}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Composition error: {ex.Message}");
+        }
+        finally
+        {
+            isComposing = false;
+        }
+    }
+}

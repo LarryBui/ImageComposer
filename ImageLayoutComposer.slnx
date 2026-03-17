@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ImageLayoutComposer.Api/ImageLayoutComposer.Api.csproj" />
+    <Project Path="src/ImageLayoutComposer.Client/ImageLayoutComposer.Client.csproj" />
+    <Project Path="src/ImageLayoutComposer.Shared/ImageLayoutComposer.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ImageLayoutComposer.Tests/ImageLayoutComposer.Tests.csproj" />
+  </Folder>
+</Solution>

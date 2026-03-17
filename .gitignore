@@ -1,0 +1,28 @@
+# .NET (ASP.NET Core, Blazor, Console, Class Libraries)
+[Bb]in/
+[Oo]bj/
+[Aa]ppBundle/
+[Dd]ist/
+[Pp]ublish/
+[Tt]estResults/
+*.swp
+*.user
+*.suo
+*.ide
+*.sln.doccache
+*.sln.doccache.bak
+.vs/
+.vscode/
+.idea/
+
+# Image Layout Composer specific
+src/ImageLayoutComposer.Api/uploads/
+
+# User-specific
+.gemini/
+.geminiignore
+tmp/
+out.log
+err.log
+design.md
+instructions.txt

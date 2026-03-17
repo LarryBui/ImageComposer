@@ -1,0 +1,49 @@
+@inherits LayoutComponentBase
+@using ImageLayoutComposer.Client.Services
+@inject NotificationService Notifier
+@implements IDisposable
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert @messageClass alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    @message
+                    <button type="button" class="btn-close" @onclick="() => message = null" aria-label="Close"></button>
+                </div>
+            }
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private string? message;
+    private string messageClass = "alert-info";
+
+    protected override void OnInitialized()
+    {
+        Notifier.OnMessage += HandleMessage;
+    }
+
+    private void HandleMessage(string msg, string cssClass)
+    {
+        message = msg;
+        messageClass = cssClass;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Notifier.OnMessage -= HandleMessage;
+    }
+}
